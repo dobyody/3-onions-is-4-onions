@@ -23,13 +23,21 @@ record the link below. Only results/*.json, results/RESULTS.md and small fixture
 
 1. Phone on a fixed stand, same position for all attempts of a setup. Lock exposure and focus on the patch.
 2. Start recording. Wait ~2 s. Click **Send** on the laptop. Wait until idle (gray 128) for ≥1 s after the packet.
-3. Stop recording. Save the sender JSON log next to the clip (same attempt number).
-4. Copy the clip to the laptop as `clips/<setup>-<nn>.mp4`.
-5. Score it:
+3. Stop recording when the sender says **Sent**. Click **Save log** (see 01-transmitter/CAPTURE.md).
+4. Copy the clip to the laptop as `clips/<setup>-<nn>.mov` and the log as `clips/<setup>-<nn>.tx.json`.
+   (`clips/` is outside 04-demo and clips are ignored by Git.)
+5. Find the ROI once per setup (the phone does not move between attempts):
    ```
-   python3 04-demo/bench.py run --video clips/A-01.mp4 --roi X,Y,W,H --setup "A" --attempt 1 --notes "..."
+   python3 04-demo/roi.py --video clips/A-01.mov        # automatic; check clips/A-01.mov.roi.png
+   python3 04-demo/roi.py --video clips/A-01.mov --pick # draw it by hand if automatic is wrong
    ```
-6. After the series: `python3 04-demo/bench.py report` → `04-demo/results/RESULTS.md`.
+6. Score it:
+   ```
+   python3 04-demo/bench.py run --video clips/A-01.mov --roi X,Y,W,H --setup "A" --attempt 1 \
+       --tx-log clips/A-01.tx.json --notes "..."
+   ```
+   Attempts whose sender log has `timing_ok=false` are logged but excluded from the totals: repeat them.
+7. After the series: `python3 04-demo/bench.py report` → `04-demo/results/RESULTS.md`.
 
 Target: at least 8 CRC-valid packets out of 10 attempts in setup A. Report every attempt, including failures.
 

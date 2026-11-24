@@ -126,9 +126,19 @@ def cmd_run(a):
     s = score_attempt(data, payload)
     print_score(s)
     elapsed = a.elapsed_s if a.elapsed_s is not None else video_duration_s(a.video)
+    tx = {}
+    if a.tx_log:
+        with open(a.tx_log) as f:
+            log = json.load(f)
+        tx = {"tx_log": a.tx_log, "timing_ok": log.get("timing_ok"),
+              "tx_packet_hex": log.get("packet_hex"), "tx_payload": log.get("payload_ascii")}
+        if log.get("timing_ok") is False:
+            print("WARNING: transmit log has timing_ok=false -> repeat this attempt (marked invalid_tx)")
+        if (log.get("payload_ascii") or payload) != payload:
+            print("WARNING: transmit log payload %r differs from expected %r" % (log.get("payload_ascii"), payload))
     row = dict(s, time=stamp, setup=a.setup, attempt=a.attempt, video=a.video, roi=a.roi,
                expected=payload, elapsed_s=elapsed or 0.0, decode_json=os.path.relpath(out, ROOT),
-               contract_problems=problems, notes=a.notes)
+               contract_problems=problems, notes=a.notes, **tx)
     with open(TRIALS, "a") as f:
         f.write(json.dumps(row) + "\n")
     print("logged to %s (elapsed %.1f s)" % (os.path.relpath(TRIALS, ROOT), row["elapsed_s"]))
@@ -139,8 +149,10 @@ def cmd_report(a):
         sys.exit("no trials yet: run 'bench.py run ...' first")
     with open(TRIALS) as f:
         rows = [json.loads(line) for line in f if line.strip()]
+    invalid = [r for r in rows if r.get("timing_ok") is False]
+    rows_valid = [r for r in rows if r.get("timing_ok") is not False]
     setups = {}
-    for r in rows:
+    for r in rows_valid:
         setups.setdefault(r.get("setup") or "(no setup)", []).append(r)
 
     def fmt(v, pct=False, digits=3):
@@ -161,13 +173,15 @@ def cmd_report(a):
             fmt(g["goodput_bps"]), g["elapsed_s"]))
         target = "met" if g["successes"] >= 8 and g["attempts"] >= 10 else "not yet"
         lines.append("| ↳ target ≥8/10 | %s | | | | | | | |" % target)
+    if invalid:
+        lines += ["", "%d attempt(s) excluded because the sender log had timing_ok=false (listed below)." % len(invalid)]
     lines += ["", "## Attempts", "",
               "| Time | Setup | # | Success | CRC | Payload | BER | Erased | Missing | Notes |",
               "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |"]
     for r in rows:
         lines.append("| %s | %s | %s | %s | %s | %s | %s | %d | %d | %s |" % (
             r["time"], r.get("setup") or "", r.get("attempt") or "", "yes" if r["success"] else "no", r["crc_ok"],
-            r["payload_ascii"], fmt(r["ber"], digits=4), r["erased_bits"], r["missing_bits"], r.get("notes") or ""))
+            r["payload_ascii"], fmt(r["ber"], digits=4), r["erased_bits"], r["missing_bits"], (r.get("notes") or "") + (" [tx timing_ok=false, excluded]" if r.get("timing_ok") is False else "")))
     path = os.path.join(RESULTS_DIR, "RESULTS.md")
     with open(path, "w") as f:
         f.write("\n".join(lines) + "\n")
@@ -208,6 +222,7 @@ def main():
     r.add_argument("--expected", help="expected payload (default: reference fixture)")
     r.add_argument("--elapsed-s", type=float, help="test time for goodput (default: clip duration)")
     r.add_argument("--notes", default="")
+    r.add_argument("--tx-log", help="tx-log-<time>.json saved by the sender page")
     r.add_argument("--decoder", default=DECODER)
     r.set_defaults(func=cmd_run)
 
