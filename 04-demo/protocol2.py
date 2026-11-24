@@ -17,7 +17,7 @@ import json
 import os
 
 SYNC = bytes([0xDD, 0xAA])
-CHIP_US = 100            # nominal chip duration (10 kHz chip rate, 5 kbit/s line rate)
+CHIP_US = 50             # default chip for 60 fps phones (20 kHz chips); per setup, see rs_plan.py
 GAP_CHIPS = 8            # mean-level gap between chunks
 DATA_PER_CHUNK = 4
 CHUNK_BYTES = 2 + 3 + DATA_PER_CHUNK + 2
@@ -82,12 +82,17 @@ def build_chunks(message, msg_id=1):
     return chunks
 
 
+def gap_chips(i):
+    """Mean-level gap after chunk i."""
+    return GAP_CHIPS
+
+
 def carousel_chips(chunks):
     """One loop of the emitter: chips per chunk followed by a mean-level gap (None = mean level)."""
     out = []
-    for c in chunks:
+    for i, c in enumerate(chunks):
         out += manchester(bytes_to_bits(c))
-        out += [None] * GAP_CHIPS
+        out += [None] * gap_chips(i)
     return out
 
 

@@ -23,7 +23,7 @@ sys.path.insert(0, HERE)
 import protocol2 as p2  # noqa: E402
 
 
-def main():
+def parse_args(argv=None):
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--out", required=True)
     p.add_argument("--message", default=p2.REFERENCE_MESSAGE)
@@ -32,10 +32,10 @@ def main():
                    help="constant = light held at the bright symbol level; steady = mean level, no data")
     p.add_argument("--height", type=int, default=1080, help="sensor rows")
     p.add_argument("--width", type=int, default=160)
-    p.add_argument("--fps", type=float, default=30.0)
-    p.add_argument("--frames", type=int, default=120)
-    p.add_argument("--row-time-us", type=float, default=28.0)
-    p.add_argument("--exposure-us", type=float, default=30.0)
+    p.add_argument("--fps", type=float, default=60.0)
+    p.add_argument("--frames", type=int, default=150)
+    p.add_argument("--row-time-us", type=float, default=14.0, help="1080 rows x 14 us = 15.1 ms readout (60 fps)")
+    p.add_argument("--exposure-us", type=float, default=40.0)
     p.add_argument("--chip-us", type=float, default=p2.CHIP_US)
     p.add_argument("--depth", type=float, default=0.25, help="chip level = mean * (1 +/- depth)")
     p.add_argument("--send-s", type=float, default=0.5, help="time of the Send click")
@@ -46,7 +46,11 @@ def main():
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--png", action="store_true")
     p.add_argument("--mp4", action="store_true")
-    a = p.parse_args()
+    return p.parse_args(argv)
+
+
+def main():
+    a = parse_args()
     rng = np.random.default_rng(a.seed)
 
     chip_s, row_s, exp_s = a.chip_us * 1e-6, a.row_time_us * 1e-6, a.exposure_us * 1e-6

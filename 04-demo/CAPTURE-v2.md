@@ -5,8 +5,16 @@ Count every attempt, failures included.
 
 ## 0. Hardware go/no-go (first 15–20 minutes)
 
-1. Point the phone at the emitter running the carousel. Lock exposure as short as the camera allows (bands blur when the
-   exposure is longer than a chip) and lock focus.
+All our phones film at **60 fps**. At 60 fps a frame lasts 16.7 ms and the rows are read out in only ~15 ms, so the
+chunks must be short.
+
+0. Pick the chip duration for the camera mode. Use the row time from the scope calibration; until then the tool guesses.
+   ```
+   python3 04-demo/rs_plan.py --fps 60 --rows 1080 --row-time-us 14 --exposure-us <shortest exposure the phone reaches>
+   ```
+   Set the emitter to the recommended `--chip-us`, and pass the printed `--rows-per-chip` to `live.py`.
+1. Point the phone at the emitter running the carousel, in the **60 fps** video mode. Lock exposure as short as the camera
+   allows (bands blur when the exposure is longer than a chip) and lock focus. Write down the exposure you get.
 2. Look at a raw crop: `python3 04-demo/live.py --video <stream URL or clip> --roi x,y,w,h --orientation <deg>`.
    The row trace must show regular bands, and the zoomed strip must show `DD AA` bits.
 3. Write the result in `04-demo/STATUS.md`: **verified** only if controlled symbols are distinguishable inside single frames.
@@ -15,9 +23,9 @@ Count every attempt, failures included.
 ## 1. Record the setup once
 
 ```
-python3 04-demo/trials2.py setup --name A --phone "..." --camera-mode "1080p30, exposure 1/8000, focus locked" \
-    --fps <effective stream fps> --resolution 1920x1080 --orientation 90 --row-time-us <from scope calibration> \
-    --emitter "..." --emitter-settings "chip 100 us, depth 25%" --distance-cm 30 --transport "..."
+python3 04-demo/trials2.py setup --name A --phone "..." --camera-mode "1080p60, exposure locked, focus locked" \
+    --fps <effective stream fps, aim for 60> --resolution 1920x1080 --orientation 90 --row-time-us <from scope calibration> \
+    --emitter "..." --emitter-settings "chip 50 us, depth 25%, exposure 1/20000" --distance-cm 30 --transport "..."
 ```
 
 ## 2. Delivery attempts (aim for 8/10 with ≥64 bytes in ≤25 s)
@@ -34,6 +42,9 @@ python3 04-demo/trials2.py setup --name A --phone "..." --camera-mode "1080p30, 
 4. Run the control once per setup with the same stream plus `--frame-mean`, then log it the same way. It must verify nothing.
 
 ## 3. Preview latency (≥20 observations, p95 < 1 s)
+
+The phone films at 60 fps, but check the `effective_fps` that `live.py` reports. Wi-Fi streams often deliver fewer
+frames, which only slows delivery down (every frame is a chance to catch chunks).
 
 Show a millisecond stopwatch on a second screen. Point the phone at it and photograph the real stopwatch next to its
 image in the preview. Each photo gives one pair of readings, `real_ms:preview_ms`.

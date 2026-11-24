@@ -44,43 +44,55 @@ def normalize(profile, rows_per_chip):
     return profile / np.maximum(base, 1e-6) - 1.0
 
 
-def _chip_means(cs, start, rpc, n):
-    centers = start + (np.arange(n) + 0.5) * rpc
-    lo = np.floor(centers - 0.25 * rpc).astype(int)
-    hi = np.maximum(np.ceil(centers + 0.25 * rpc).astype(int), lo + 1)
-    return (cs[hi] - cs[lo]) / (hi - lo)
+SYNC_BITS = np.array(p2.bytes_to_bits(p2.SYNC))
+WEIGHTS = 1 << np.arange(7, -1, -1)
 
 
-def _read(cs, start, rpc):
-    c = _chip_means(cs, start, rpc, p2.CHUNK_CHIPS)
-    first, second = c[0::2], c[1::2]
-    bits = (first > second).astype(int)
-    margin = float(np.mean(np.abs(first - second)))
-    return p2.bits_to_bytes(list(bits)), margin
+def _read_many(cs, starts, rpcs):
+    """Read one chunk for every (start, rows_per_chip) pair at once. Returns (bytes matrix, margins)."""
+    k = np.arange(p2.CHUNK_CHIPS) + 0.5
+    centers = starts[:, None] + k[None, :] * rpcs[:, None]
+    half = 0.25 * rpcs[:, None]
+    lo = np.floor(centers - half).astype(int)
+    hi = np.maximum(np.ceil(centers + half).astype(int), lo + 1)
+    c = (cs[hi] - cs[lo]) / (hi - lo)
+    first, second = c[:, 0::2], c[:, 1::2]
+    bits = (first > second).astype(np.int64)
+    by = (bits.reshape(len(starts), -1, 8) * WEIGHTS).sum(axis=2)
+    return by, np.abs(first - second).mean(axis=1)
 
 
-def decode_profile(profile, rpc_min=2.0, rpc_max=16.0, rpc_hint=None, thresh=0.55):
+def _windowed(cs, cs2, m):
+    s1 = cs[m:] - cs[:-m]
+    s2 = cs2[m:] - cs2[:-m]
+    return s1, s2
+
+
+def decode_profile(profile, rpc_min=2.0, rpc_max=16.0, rpc_hint=None, thresh=0.55, hint_span=0.1):
     """Return CRC-valid chunks found in one row profile (list of dicts with row_start, rows_per_chip)."""
     profile = np.asarray(profile, dtype=float)
     n = len(profile)
     if rpc_hint:
-        rpcs = rpc_hint * np.geomspace(0.9, 1.1, 21)
+        rpcs = rpc_hint * np.geomspace(1 - hint_span, 1 + hint_span, max(5, int(hint_span * 200) + 1))
     else:
         rpcs = np.geomspace(rpc_min, rpc_max, int(np.log(rpc_max / rpc_min) / np.log(1.01)) + 1)
-    s_cache = {}
+    cache = {}
     cands = []
     for rpc in rpcs:
         if p2.CHUNK_CHIPS * rpc + 2 > n:
             continue
         key = int(round(rpc))
-        if key not in s_cache:
-            s_cache[key] = normalize(profile, rpc)
-        s = s_cache[key]
+        if key not in cache:
+            sn = normalize(profile, rpc)
+            cache[key] = (sn, np.concatenate([[0.0], np.cumsum(sn)]), np.concatenate([[0.0], np.cumsum(sn * sn)]))
+        sn, cs, cs2 = cache[key]
         idx = np.minimum((np.arange(int(len(SYNC_PM) * rpc)) / rpc).astype(int), len(SYNC_PM) - 1)
         t = SYNC_PM[idx]
         t = t - t.mean()
-        corr = np.correlate(s, t, mode="valid")
-        energy = np.sqrt(np.convolve(s * s, np.ones(len(t)), mode="valid") - np.convolve(s, np.ones(len(t)), mode="valid") ** 2 / len(t))
+        m = len(t)
+        corr = np.correlate(sn, t, mode="valid")
+        s1, s2 = _windowed(cs, cs2, m)
+        energy = np.sqrt(np.maximum(s2 - s1 * s1 / m, 0))
         score = corr / (np.linalg.norm(t) * np.maximum(energy, 1e-9))
         limit = n - int(p2.CHUNK_CHIPS * rpc) - 1
         for i in np.nonzero(score[:max(0, limit)] > thresh)[0]:
@@ -90,22 +102,27 @@ def decode_profile(profile, rpc_min=2.0, rpc_max=16.0, rpc_hint=None, thresh=0.5
     for sc, start, rpc in cands:
         if any(abs(start - a) < b for a, b in taken):
             continue
-        s = s_cache[int(round(rpc))]
-        cs = np.concatenate([[0.0], np.cumsum(s)])
-        best = None
-        for r in rpc * np.linspace(0.97, 1.03, 31):
-            for st in start + np.arange(-0.5, 0.51, 0.25) * r:
-                if st < 0 or st + p2.CHUNK_CHIPS * r + 1 >= n:
-                    continue
-                raw, margin = _read(cs, st, r)
-                ch = p2.parse_chunk(raw)
-                if ch and ch["crc_ok"] and (best is None or margin > best[0]):
-                    best = (margin, st, r, ch)
+        cs = cache[int(round(rpc))][1]
+        rr = rpc * np.linspace(0.97, 1.03, 31)
+        ss = np.arange(-0.5, 0.51, 0.25)
+        R, S = np.meshgrid(rr, ss, indexing="ij")
+        R, S = R.ravel(), start + (S * R).ravel()
+        keep = (S >= 0) & (S + p2.CHUNK_CHIPS * R + 1 < n)
         taken.append((start, p2.CHUNK_CHIPS * rpc * 0.5))
+        if not keep.any():
+            continue
+        R, S = R[keep], S[keep]
+        by, margin = _read_many(cs, S, R)
+        best = None
+        for j in np.nonzero((by[:, 0] == 0xDD) & (by[:, 1] == 0xAA))[0]:
+            if best is not None and margin[j] <= best[0]:
+                continue
+            ch = p2.parse_chunk(bytes(by[j].astype(np.uint8)))
+            if ch and ch["crc_ok"]:
+                best = (float(margin[j]), float(S[j]), float(R[j]), ch)
         if best:
-            margin, st, r, ch = best
-            ch.update(row_start=round(st, 2), rows_per_chip=round(r, 4), sync_score=round(sc, 3),
-                      margin=round(margin, 4))
+            mg, st, r, ch = best
+            ch.update(row_start=round(st, 2), rows_per_chip=round(r, 4), sync_score=round(sc, 3), margin=round(mg, 4))
             found.append(ch)
             taken[-1] = (st, p2.CHUNK_CHIPS * r)
     return sorted(found, key=lambda c: c["row_start"])
@@ -117,9 +134,12 @@ class Decoder:
     frame = {"frame_id", "image", "orientation" (deg), "capture_ts_s", "ts_kind": "capture"|"arrival"}
     """
 
-    def __init__(self, roi=None, rows_per_chip=None, frame_mean=False):
+    def __init__(self, roi=None, rows_per_chip=None, frame_mean=False, relock_after=30):
         self.roi = roi
-        self.rpc = rows_per_chip
+        self.rpc = rows_per_chip      # calibration hint (fixed)
+        self.lock = None              # rows per chip learned from decoded chunks
+        self.miss = 0
+        self.relock_after = relock_after
         self.frame_mean = frame_mean
         self.asm = p2.Reassembler()
 
@@ -128,7 +148,17 @@ class Decoder:
         prof = row_profile(img, self.roi)
         if self.frame_mean:  # control: throw away the row information, keep one brightness per frame
             prof = np.full_like(prof, prof.mean())
-        chunks = decode_profile(prof, rpc_hint=self.rpc)
+        # Search all chip sizes until the first chunk, then only around the learned one (fast enough for 60 fps).
+        # After relock_after frames without a chunk, go back to the full search.
+        hint = self.lock or self.rpc
+        chunks = decode_profile(prof, rpc_hint=hint, hint_span=0.04 if self.lock else 0.1)
+        if chunks:
+            self.lock = float(np.median([c["rows_per_chip"] for c in chunks]))
+            self.miss = 0
+        else:
+            self.miss += 1
+            if self.lock and self.miss >= self.relock_after:
+                self.lock, self.miss = None, 0
         msgs = []
         for c in chunks:
             c["frame_id"] = frame["frame_id"]

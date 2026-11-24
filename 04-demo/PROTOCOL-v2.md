@@ -12,7 +12,8 @@ Reference implementation: [protocol2.py](protocol2.py). Reference vector: [fixtu
 | --- | --- | --- |
 | Line code | Manchester. Bit 1 = chips `1,0`, bit 0 = chips `0,1`. MSB first. | Mean light is the same for every bit, so there is no low-frequency flicker. The receiver needs no absolute level. |
 | Chip levels | `1` = mean × (1 + depth), `0` = mean × (1 − depth). The gap between chunks holds the mean level. | Equal swing around the mean keeps the brightness constant before, during and after Send. |
-| Chip duration | 100 µs nominal (10 kHz chip rate, 5 kbit/s line rate). | With a typical 1080-row phone mode at ~28 µs per row this is ~3.6 rows per chip, and the 176-chip chunk is 17.6 ms. That fits inside a ~30 ms readout. Tune it after the hardware go/no-go and the scope's row-time calibration. |
+| Chip duration | **Per setup**, chosen with `rs_plan.py`. Default **50 µs** for our **60 fps** phones (20 kHz chips). | At 60 fps the readout of a 1080-row frame is only ~15 ms (~14 µs per row). A 50 µs chip is ~3.6 rows and the 176-chip chunk is 8.8 ms, so about 0.7 complete chunks land in every frame. A 100 µs chip (17.6 ms chunk) **never fits** in a 60 fps frame. The decoder finds the chip size by itself, so only the emitter setting changes. |
+| Exposure | Lock the shortest exposure the phone allows. It should be ≤ the chip duration (up to 1.5× still decodes). | A longer exposure averages neighbouring chips together. 50 µs is 1/20000 s: check during the go/no-go what the phone really reaches with the LED in view. |
 | Depth | Start at 25 %, lower it until the visibility trials pass and the decoder still locks. | Trades visibility against bit errors. |
 | Emitter | A fast light the team controls (LED and driver, or a microcontroller). | A browser page is tied to the 60 Hz refresh, so it cannot make 10 kHz chips. Use the screen only if the go/no-go shows usable bands. |
 
@@ -32,7 +33,7 @@ CRC-valid chunks from any frames in any order. Duplicates are fine and lost fram
 | 2 | CRC-16/CCITT-FALSE (as in v1) over `msg_id` through data, high byte first |
 
 The message is verified when every index has a CRC-valid chunk and the CRC-16 of the reassembled bytes matches the
-descriptor. A 64-byte message is 17 chunks, and one carousel loop is 0.31 s.
+descriptor. A 64-byte message is 17 chunks, and one carousel loop is 0.16 s at 50 µs chips.
 
 ## Video input (transport → receiver)
 

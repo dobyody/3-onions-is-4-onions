@@ -5,7 +5,8 @@ Run from the project root.
   # synthetic rehearsal (frames from the fixture, paced at its fps)
   python3 04-demo/live.py --fixture 04-demo/fixtures/rs_clean.npz --realtime
   # live phone stream (any URL OpenCV can open: MJPEG/RTSP/HTTP from the transport role) or a clip
-  python3 04-demo/live.py --video http://PHONE:8080/video --roi 0,0,320,1080 --orientation 90 --setup-file 04-demo/results/setup-A.json
+  python3 04-demo/live.py --video http://PHONE:8080/video --roi 0,0,320,1080 --orientation 90 --rows-per-chip 3.57 \
+      --setup-file 04-demo/results/setup-A.json      # 60 fps phone, 50 us chips (rows/chip from rs_plan.py)
   # local camera index
   python3 04-demo/live.py --camera 0
   # control: same input, each frame collapsed to its mean brightness (must NOT verify a message)

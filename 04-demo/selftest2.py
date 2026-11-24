@@ -71,13 +71,23 @@ def main():
         "rs_clean": [],
         "rs_hard": ["--depth", "0.08", "--noise", "8", "--jpeg", "60", "--drop", "0.2", "--orientation", "90", "--seed", "2"],
         "rs_constant": ["--mode", "constant"],
+        # same decoder, a 30 fps phone with its own chip size (rs_plan.py picks it per camera mode)
+        "rs_30fps": ["--fps", "30", "--row-time-us", "28", "--chip-us", "100", "--frames", "90", "--seed", "5"],
     }
     for name, extra in specs.items():
         path = os.path.join(FX, name + ".npz")
-        if not os.path.exists(path + ".truth.json"):
+        stale = True
+        if os.path.exists(path + ".truth.json") and os.path.exists(path):
+            with open(path + ".truth.json") as f:
+                old = json.load(f)["params"]
+            ref = json.loads(subprocess.run([PY, "-c", "import sys; sys.argv=['x','--out','x']+%r; sys.path.insert(0, %r); "
+                                             "import make_rs_fixture as m, json; print(json.dumps(vars(m.parse_args())))" % (extra, HERE)],
+                                            capture_output=True, text=True).stdout)
+            stale = any(old.get(k) != v for k, v in ref.items() if k not in ("out", "png", "mp4"))
+        if stale:
             rc, txt = run([os.path.join(HERE, "make_rs_fixture.py"), "--out", path, "--png"] + extra)
             check("generate " + name, rc == 0, txt.strip().splitlines()[-1] if txt.strip() else "")
-    for name in ("rs_clean", "rs_hard"):
+    for name in ("rs_clean", "rs_hard", "rs_30fps"):
         path = os.path.join(FX, name + ".npz")
         with open(path + ".truth.json") as f:
             truth = json.load(f)
@@ -101,6 +111,16 @@ def main():
             lg = json.load(f)
         check("live.py on fixture verifies", rc == 0 and lg["success"], "(delivery %.2f s)" % lg["messages"][0]["delivery_s"] if lg["messages"] else txt[-300:])
         check("live.py writes preview PNG", os.path.exists(log.replace(".json", "-verified.png")))
+        rt = os.path.join(tmp, "live-rt.json")
+        run([os.path.join(HERE, "live.py"), "--fixture", os.path.join(FX, "rs_clean.npz"), "--headless", "--realtime",
+             "--keep-going", "--max-seconds", "3", "--out", rt])
+        with open(rt) as f:
+            lg = json.load(f)
+        check("decoder keeps up with 60 fps in real time", lg["decode_ms_median"] < 1000 / 60 and lg["success"],
+              "(median %.1f ms/frame, %d of %d frames dropped)" % (lg["decode_ms_median"], lg["frames_dropped_in_queue"], lg["frames_read"]))
+        rc, txt = run([os.path.join(HERE, "rs_plan.py"), "--fps", "60", "--rows", "1080", "--row-time-us", "14", "--exposure-us", "40"])
+        check("rs_plan: 100 us chips cannot work at 60 fps, 50 us recommended",
+              "| 100 | 7.1 | 17.6 | 0.00" in txt and "recommended: --chip-us 50 " in txt)
         rc, txt = run([os.path.join(HERE, "live.py"), "--fixture", os.path.join(FX, "rs_clean.npz"), "--headless",
                        "--frame-mean", "--out", os.path.join(tmp, "live-ctl.json")])
         check("live.py frame-mean control passes", rc == 0 and "PASS (no packet)" in txt)

@@ -89,6 +89,8 @@ def cmd_fixture(a):
     variants = {
         "synth_clean": [],
         "synth_noisy": ["--noise", "10", "--blur", "5", "--fps", "29.97", "--gain", "0.85", "--offset", "12", "--seed", "7"],
+        # the team films at 60 fps
+        "synth_60fps": ["--noise", "10", "--blur", "5", "--fps", "59.94", "--gain", "0.85", "--offset", "12", "--seed", "8"],
     }
     os.makedirs(FIXTURE_DIR, exist_ok=True)
     failures = 0

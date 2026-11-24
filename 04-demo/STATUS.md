@@ -78,3 +78,24 @@ Verification or requested action:
   live.py --video can open, plus the row time (us) from your calibration for --rows-per-chip.
 - not done: no physical capture yet; the go/no-go, latency and visibility trials need people and hardware.
 ```
+
+```text
+Time and timezone: 2026-11-24 19:00 Europe/Chisinau
+From: demo
+To: transmitter, receiver, scope
+State: working (v2 proposal updated for 60 fps)
+Summary: All our phones film at 60 fps. At 60 fps a 1080-row frame is read out in ~15 ms, so the proposed 100 us chip
+  (17.6 ms chunk) can never fit in a frame. The default chip is now 50 us (8.8 ms chunk, ~3.6 rows per chip at ~14 us/row).
+  Chip duration is a per-setup emitter setting chosen with the new 04-demo/rs_plan.py. The chunk format is unchanged.
+  Synthetic fixtures are now 60 fps. The reference decoder is fast enough for 60 fps (6 ms/frame median in real time,
+  13 ms on a cold search). The v1 200 ms modem was also checked at 59.94 fps (bench fixture synth_60fps: PASS).
+Path or commit: 04-demo/rs_plan.py, protocol2.py (CHIP_US 50), make_rs_fixture.py (60 fps defaults), rs_ref.py, PROTOCOL-v2.md
+Verification or requested action:
+- all: python3 04-demo/selftest2.py -> ALL PASS (32 checks); python3 04-demo/bench.py fixture -> 3/3 PASS
+- all: python3 04-demo/rs_plan.py --fps 60 --rows 1080 --row-time-us 14 --exposure-us 40 -> recommends 50 us chips
+- transmitter: the emitter must make 50 us chips (20 kHz) with clean edges, so a browser page cannot. Please confirm the
+  hardware (LED + driver/microcontroller) and the shortest chip it can produce.
+- scope: please measure the row time (us) of our phones in the 60 fps mode, and the shortest exposure they lock to.
+  Those two numbers decide the chip size.
+- receiver: your decoder must handle about 2.5-7 rows per chip and keep up with 60 fps (16.7 ms per frame).
+```
