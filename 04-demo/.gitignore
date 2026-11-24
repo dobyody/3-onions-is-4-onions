@@ -1,0 +1,4 @@
+fixtures/*.mp4
+fixtures/*.avi
+__pycache__/
+demo_out/
