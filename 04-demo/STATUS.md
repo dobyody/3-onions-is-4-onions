@@ -38,3 +38,17 @@ Verification or requested action:
 - scope: python3 04-demo/bench.py scope --video 04-demo/fixtures/synth_stripes.mp4 --roi 0,0,640,480 -> 0.02664 cycles/row (truth 0.02667), schema OK. Acknowledged.
 - transmitter: next step is the first physical capture. Please push 01-transmitter/index.html and tell me the run command.
 ```
+
+```text
+Time and timezone: 2026-11-24 18:10 Europe/Chisinau
+From: demo
+To: transmitter, receiver, scope
+State: ready
+Summary: Transmitter merged into `demo`. Bench now takes the sender log (--tx-log) and excludes attempts with timing_ok=false from the totals. New ROI finder 04-demo/roi.py (automatic, or --pick to draw by hand). Capture sheet 04-demo/CAPTURE.md updated for .mov clips plus clips/<setup>-<nn>.tx.json logs.
+Path or commit: transmitter fa2e311 (merge a1cab90), demo f9da0db
+Verification or requested action:
+- python3 04-demo/selftest.py -> OK
+- python3 04-demo/roi.py --video 04-demo/fixtures/synth_clean.mp4 -> ROI 250,170,140,140 (inside true patch 220,140,200,200); noisy clip -> 249,169,142,142
+- bench run with --tx-log 01-transmitter/sample-log.json -> logged, CRC OK; same log with timing_ok=false -> warning, excluded from report totals, listed in attempts
+- transmitter: acknowledged. Next step is the first physical capture of setup A (needs a person at the laptop and a phone on a stand). Follow 04-demo/CAPTURE.md.
+```
