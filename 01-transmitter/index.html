@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RS Transmitter</title>
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; color: #ddd;
+    font: 14px/1.4 system-ui, -apple-system, Segoe UI, sans-serif; }
+  body { display: flex; flex-direction: column; }
+  #controls { padding: 10px 14px; background: #111; border-bottom: 1px solid #333;
+    display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  #controls label { display: inline-flex; gap: 6px; align-items: center; }
+  input[type=text] { font: 15px ui-monospace, Menlo, monospace; width: 13em; padding: 4px 6px;
+    background: #000; color: #fff; border: 1px solid #555; border-radius: 4px; }
+  input[type=number] { width: 5.5em; background: #000; color: #fff; border: 1px solid #555;
+    border-radius: 4px; padding: 3px 4px; }
+  input.bad { border-color: #e55; }
+  button { font: inherit; padding: 6px 14px; border-radius: 4px; border: 1px solid #666;
+    background: #222; color: #fff; cursor: pointer; }
+  button.primary { background: #1d5fbf; border-color: #3a7be0; font-weight: 600; }
+  button:disabled { opacity: .45; cursor: default; }
+  .badge { padding: 2px 8px; border-radius: 10px; font-weight: 600; font-size: 12px; }
+  .pass { background: #1e6b34; } .fail { background: #8b1e1e; }
+  #info { width: 100%; font: 12px ui-monospace, Menlo, monospace; color: #9a9a9a;
+    word-break: break-all; white-space: pre-wrap; }
+  #msg { width: 100%; min-height: 1.4em; }
+  #msg.err { color: #f77; }
+  #stage { flex: 1; position: relative; display: flex; align-items: center;
+    justify-content: center; background: #000; min-height: 200px; }
+  #patch { background: rgb(128,128,128); }
+  #stage:fullscreen { cursor: none; }
+</style>
+</head>
+<body>
+<div id="controls">
+  <label>Payload <input id="payload" type="text" value="HELLO RS" maxlength="16" spellcheck="false" autocomplete="off"></label>
+  <button id="send" class="primary" title="Space also sends">Send</button>
+  <button id="save" disabled>Save log</button>
+  <button id="fs" title="Fullscreen patch; Space sends, Esc exits">Fullscreen</button>
+  <label>Patch size <input id="size" type="range" min="10" max="100" value="60"> <span id="sizeVal">60%</span></label>
+  <label>Pre idle ms <input id="pre" type="number" min="1000" step="100" value="1000"></label>
+  <label>Post idle ms <input id="post" type="number" min="1000" step="100" value="1000"></label>
+  <span>Self-test <span id="selftest" class="badge">…</span></span>
+  <span id="state">idle</span>
+  <div id="info"></div>
+  <div id="msg"></div>
+</div>
+<div id="stage"><div id="patch"></div></div>
+
+<script id="encoder">
+// Packet encoder for modem interface v1 (see ../CONTRACT.md).
+// Sets window.RSEncoder. test_encoder.mjs extracts and runs this exact block in Node.
+(function (root, factory) {
+  const api = factory();
+  if (typeof module === 'object' && module.exports) module.exports = api;
+  else root.RSEncoder = api;
+})(typeof self !== 'undefined' ? self : this, function () {
+  'use strict';
+
+  const PREAMBLE = [0xdd, 0xaa];
+  const MAX_PAYLOAD = 16;
+
+  // CRC-16/CCITT-FALSE: poly 0x1021, init 0xFFFF, no reflection, xorout 0x0000.
+  function crc16ccittFalse(bytes) {
+    let crc = 0xffff;
+    for (const b of bytes) {
+      crc ^= b << 8;
+      for (let i = 0; i < 8; i++) {
+        crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+      }
+    }
+    return crc;
+  }
+
+  function validatePayload(payloadAscii) {
+    if (typeof payloadAscii !== 'string') throw new Error('Payload must be a string');
+    const n = payloadAscii.length;
+    if (n < 1 || n > MAX_PAYLOAD) throw new Error(`Payload length must be 1..${MAX_PAYLOAD}, got ${n}`);
+    for (let i = 0; i < n; i++) {
+      const c = payloadAscii.charCodeAt(i);
+      if (c < 0x20 || c > 0x7e) throw new Error(`Non-printable ASCII at index ${i} (code ${c})`);
+    }
+  }
+
+  // DD AA | len | payload | CRC hi | CRC lo  (CRC over len + payload only)
+  function buildPacket(payloadAscii) {
+    validatePayload(payloadAscii);
+    const body = [payloadAscii.length];
+    for (let i = 0; i < payloadAscii.length; i++) body.push(payloadAscii.charCodeAt(i));
+    const crc = crc16ccittFalse(body);
+    return Uint8Array.from([...PREAMBLE, ...body, crc >> 8, crc & 0xff]);
+  }
+
+  // Field order, most significant bit first in every byte.
+  function packetToBits(bytes) {
+    const bits = [];
+    for (const b of bytes) for (let i = 7; i >= 0; i--) bits.push((b >> i) & 1);
+    return bits;
+  }
+
+  function toHex(bytes) {
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+  }
+
+  function encode(payloadAscii) {
+    const packet = buildPacket(payloadAscii);
+    const crc = (packet[packet.length - 2] << 8) | packet[packet.length - 1];
+    return {
+      payload_ascii: payloadAscii,
+      packet_hex: toHex(packet),
+      crc_hex: crc.toString(16).padStart(4, '0').toUpperCase(),
+      bits: packetToBits(packet),
+    };
+  }
+
+  return { crc16ccittFalse, validatePayload, buildPacket, packetToBits, toHex, encode, MAX_PAYLOAD };
+});
+</script>
+<script>
+'use strict';
+const SYMBOL_MS = 200;
+const STALL_MS = 100; // a frame gap this long means the browser throttled rendering
+const GRAY = { idle: 128, zero: 64, one: 192 };
+const REF = {
+  payload_ascii: 'HELLO RS',
+  packet_hex: 'DDAA0848454C4C4F205253B883',
+  crc_hex: 'B883',
+  bits: '11011101101010100000100001001000010001010100110001001100010011110010000001010010010100111011100010000011',
+};
+
+const $ = (id) => document.getElementById(id);
+const ui = { payload: $('payload'), send: $('send'), save: $('save'), fs: $('fs'), size: $('size'),
+  sizeVal: $('sizeVal'), pre: $('pre'), post: $('post'), selftest: $('selftest'), state: $('state'),
+  info: $('info'), msg: $('msg'), stage: $('stage'), patch: $('patch') };
+
+let busy = false;
+let lastLog = null;
+let currentGray = GRAY.idle;
+
+function setGray(g) {
+  if (g === currentGray) return;
+  currentGray = g;
+  ui.patch.style.backgroundColor = `rgb(${g},${g},${g})`;
+}
+function message(text, isErr = false) { ui.msg.textContent = text; ui.msg.className = isErr ? 'err' : ''; }
+
+// --- self-test against the reference packet (fixtures/packet-v1.json) ---
+(function selfTest() {
+  let ok = false;
+  try {
+    const e = RSEncoder.encode(REF.payload_ascii);
+    ok = e.packet_hex === REF.packet_hex && e.crc_hex === REF.crc_hex && e.bits.join('') === REF.bits;
+  } catch (_) { ok = false; }
+  ui.selftest.textContent = ok ? 'PASS' : 'FAIL';
+  ui.selftest.className = 'badge ' + (ok ? 'pass' : 'fail');
+  window.__selfTestPass = ok;
+})();
+
+// --- payload preview / validation ---
+function currentEncoding() {
+  try {
+    const e = RSEncoder.encode(ui.payload.value);
+    ui.payload.classList.remove('bad');
+    return e;
+  } catch (err) {
+    ui.payload.classList.add('bad');
+    return { error: err.message };
+  }
+}
+function refreshPreview() {
+  const e = currentEncoding();
+  if (e.error) { ui.info.textContent = e.error; ui.send.disabled = true; return; }
+  ui.send.disabled = busy;
+  const dur = numberOr(ui.pre, 1000) + e.bits.length * SYMBOL_MS + numberOr(ui.post, 1000);
+  ui.info.textContent = `packet ${e.packet_hex} · crc ${e.crc_hex} · ${e.bits.length} bits · ` +
+    `~${(dur / 1000).toFixed(1)} s total\nbits ${e.bits.join('')}`;
+}
+function numberOr(el, min) { const v = Number(el.value); return Number.isFinite(v) ? Math.max(min, v) : min; }
+
+// --- patch size ---
+function applySize() {
+  const p = Number(ui.size.value);
+  ui.sizeVal.textContent = p + '%';
+  ui.patch.style.width = p + '%';
+  ui.patch.style.height = p + '%';
+}
+
+// --- transmit ---
+function median(a) {
+  if (!a.length) return null;
+  const s = [...a].sort((x, y) => x - y), m = s.length >> 1;
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+const round = (x) => Math.round(x * 1000) / 1000;
+
+let tx = null; // active transmission state
+
+function startSend() {
+  if (busy) return;
+  const e = currentEncoding();
+  if (e.error) { message(e.error, true); return; }
+  const pre = numberOr(ui.pre, 1000), post = numberOr(ui.post, 1000);
+  ui.pre.value = pre; ui.post.value = post;
+
+  busy = true;
+  ui.send.disabled = true; ui.save.disabled = true; ui.payload.disabled = true;
+  ui.state.textContent = 'transmitting…';
+  message('');
+  setGray(GRAY.idle);
+  requestWakeLock();
+
+  const t0 = performance.now();
+  const rect = ui.patch.getBoundingClientRect();
+  tx = {
+    t0, enc: e, pre, post, next: 0, lastFrame: null, frameIntervals: [],
+    endPacket: pre + e.bits.length * SYMBOL_MS, endAll: pre + e.bits.length * SYMBOL_MS + post,
+    symbols: [], packetEndApplied: null, aborted: false, abortReason: null,
+    wallIso: new Date(performance.timeOrigin + t0).toISOString(),
+    patch: { x: Math.round(rect.left), y: Math.round(rect.top), w: Math.round(rect.width), h: Math.round(rect.height),
+      viewport_w: innerWidth, viewport_h: innerHeight, device_pixel_ratio: devicePixelRatio,
+      screen_w: screen.width, screen_h: screen.height, fullscreen: !!document.fullscreenElement },
+  };
+  requestAnimationFrame(frame);
+}
+
+function frame(ts) {
+  if (!tx) return;
+  const rel = ts - tx.t0;
+  if (tx.lastFrame !== null) tx.frameIntervals.push(ts - tx.lastFrame);
+  tx.lastFrame = ts;
+  // Switch on the frame closest to the deadline: apply once within half a frame of it.
+  const half = (median(tx.frameIntervals.slice(-30)) ?? 16.7) / 2;
+  const bits = tx.enc.bits;
+
+  // Symbols that are due this frame. If several are due (stall), only the last is shown.
+  const due = [];
+  while (tx.next < bits.length && rel >= tx.pre + tx.next * SYMBOL_MS - half) due.push(tx.next++);
+  due.forEach((i, k) => {
+    const scheduled = tx.pre + i * SYMBOL_MS;
+    const rec = { index: i, bit: bits[i], scheduled_ms: round(scheduled), applied_ms: round(rel) };
+    if (k < due.length - 1) rec.skipped = true; // superseded within the same frame, never displayed
+    tx.symbols.push(rec);
+  });
+  if (due.length) setGray(bits[due[due.length - 1]] ? GRAY.one : GRAY.zero);
+
+  if (tx.next >= bits.length && tx.packetEndApplied === null && rel >= tx.endPacket - half) {
+    setGray(GRAY.idle);
+    tx.packetEndApplied = round(rel);
+  }
+  if (tx.packetEndApplied !== null && rel >= tx.endAll - half) { finish(rel); return; }
+  requestAnimationFrame(frame);
+}
+
+function finish(rel, abortReason = null) {
+  const t = tx; tx = null;
+  setGray(GRAY.idle);
+  const medInt = median(t.frameIntervals);
+  const late = t.symbols.filter((s) => s.applied_ms - s.scheduled_ms > (medInt ?? 16.7)).length;
+  lastLog = {
+    payload_ascii: t.enc.payload_ascii,
+    packet_hex: t.enc.packet_hex,
+    symbol_ms: SYMBOL_MS,
+    symbols: t.symbols,
+    crc_hex: t.enc.crc_hex,
+    bits: t.enc.bits,
+    gray: { ...GRAY },
+    pre_idle_ms: t.pre,
+    post_idle_ms: t.post,
+    clock: 'performance.now (requestAnimationFrame timestamp); ms relative to Send click',
+    transmit_start_wall_iso: t.wallIso,
+    packet_start_ms: t.symbols.length ? t.symbols[0].applied_ms : null,
+    packet_end_ms: t.packetEndApplied,
+    transmit_end_ms: round(rel),
+    frame_interval_ms_median: medInt === null ? null : round(medInt),
+    frame_count: t.frameIntervals.length + 1,
+    late_symbols: late,
+    skipped_symbols: t.symbols.filter((s) => s.skipped).length,
+    max_frame_gap_ms: t.frameIntervals.length ? round(Math.max(...t.frameIntervals)) : null,
+    stall_frames: t.frameIntervals.filter((d) => d > STALL_MS).length,
+    aborted: !!abortReason,
+    abort_reason: abortReason,
+    user_agent: navigator.userAgent,
+    patch_px: t.patch,
+    contract: 'v1',
+  };
+  lastLog.timing_ok = !abortReason && lastLog.skipped_symbols === 0 && lastLog.stall_frames === 0;
+  window.__lastLog = lastLog;
+  busy = false;
+  ui.payload.disabled = false; ui.save.disabled = false;
+  refreshPreview();
+  releaseWakeLock();
+  const summary = `${lastLog.symbols.length} symbols, frame ≈ ${lastLog.frame_interval_ms_median} ms, ` +
+    `late ${late}, skipped ${lastLog.skipped_symbols}`;
+  ui.state.textContent = abortReason ? 'aborted' : 'done';
+  if (abortReason) message(`ABORTED (${abortReason}). Do not use this capture. ${summary}`, true);
+  else if (!lastLog.timing_ok) message(`TIMING DEGRADED: browser stalled (max frame gap ${lastLog.max_frame_gap_ms} ms). ` +
+    `Keep this window in front and retry. ${summary}`, true);
+  else message(`Sent. ${summary}. Save the log.`);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && tx) finish(performance.now() - tx.t0, 'tab hidden during transmit');
+});
+
+// --- log export ---
+function saveLog() {
+  if (!lastLog) return;
+  const blob = new Blob([JSON.stringify(lastLog, null, 2) + '\n'], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `tx-log-${lastLog.transmit_start_wall_iso.replace(/[:.]/g, '-')}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+// --- wake lock (best effort) ---
+let wakeLock = null;
+async function requestWakeLock() {
+  try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (_) {}
+}
+function releaseWakeLock() { if (wakeLock) { wakeLock.release().catch(() => {}); wakeLock = null; } }
+
+// --- wiring ---
+ui.payload.addEventListener('input', refreshPreview);
+ui.pre.addEventListener('input', refreshPreview);
+ui.post.addEventListener('input', refreshPreview);
+ui.size.addEventListener('input', applySize);
+ui.send.addEventListener('click', startSend);
+ui.save.addEventListener('click', saveLog);
+ui.fs.addEventListener('click', () => ui.stage.requestFullscreen?.().catch((e) => message(e.message, true)));
+document.addEventListener('keydown', (ev) => {
+  if (ev.code !== 'Space' || ev.target === ui.payload) return;
+  ev.preventDefault();
+  if (!ui.send.disabled) startSend();
+});
+
+applySize();
+refreshPreview();
+</script>
+</body>
+</html>

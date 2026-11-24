@@ -1,0 +1,774 @@
+{
+  "payload_ascii": "HELLO RS",
+  "packet_hex": "DDAA0848454C4C4F205253B883",
+  "symbol_ms": 200,
+  "symbols": [
+    {
+      "index": 0,
+      "bit": 1,
+      "scheduled_ms": 1000,
+      "applied_ms": 1000
+    },
+    {
+      "index": 1,
+      "bit": 1,
+      "scheduled_ms": 1200,
+      "applied_ms": 1200
+    },
+    {
+      "index": 2,
+      "bit": 0,
+      "scheduled_ms": 1400,
+      "applied_ms": 1400
+    },
+    {
+      "index": 3,
+      "bit": 1,
+      "scheduled_ms": 1600,
+      "applied_ms": 1600
+    },
+    {
+      "index": 4,
+      "bit": 1,
+      "scheduled_ms": 1800,
+      "applied_ms": 1800
+    },
+    {
+      "index": 5,
+      "bit": 1,
+      "scheduled_ms": 2000,
+      "applied_ms": 2000
+    },
+    {
+      "index": 6,
+      "bit": 0,
+      "scheduled_ms": 2200,
+      "applied_ms": 2200
+    },
+    {
+      "index": 7,
+      "bit": 1,
+      "scheduled_ms": 2400,
+      "applied_ms": 2400
+    },
+    {
+      "index": 8,
+      "bit": 1,
+      "scheduled_ms": 2600,
+      "applied_ms": 2600
+    },
+    {
+      "index": 9,
+      "bit": 0,
+      "scheduled_ms": 2800,
+      "applied_ms": 2800
+    },
+    {
+      "index": 10,
+      "bit": 1,
+      "scheduled_ms": 3000,
+      "applied_ms": 3000
+    },
+    {
+      "index": 11,
+      "bit": 0,
+      "scheduled_ms": 3200,
+      "applied_ms": 3200
+    },
+    {
+      "index": 12,
+      "bit": 1,
+      "scheduled_ms": 3400,
+      "applied_ms": 3400
+    },
+    {
+      "index": 13,
+      "bit": 0,
+      "scheduled_ms": 3600,
+      "applied_ms": 3600
+    },
+    {
+      "index": 14,
+      "bit": 1,
+      "scheduled_ms": 3800,
+      "applied_ms": 3800
+    },
+    {
+      "index": 15,
+      "bit": 0,
+      "scheduled_ms": 4000,
+      "applied_ms": 4000
+    },
+    {
+      "index": 16,
+      "bit": 0,
+      "scheduled_ms": 4200,
+      "applied_ms": 4200
+    },
+    {
+      "index": 17,
+      "bit": 0,
+      "scheduled_ms": 4400,
+      "applied_ms": 4400
+    },
+    {
+      "index": 18,
+      "bit": 0,
+      "scheduled_ms": 4600,
+      "applied_ms": 4600
+    },
+    {
+      "index": 19,
+      "bit": 0,
+      "scheduled_ms": 4800,
+      "applied_ms": 4800
+    },
+    {
+      "index": 20,
+      "bit": 1,
+      "scheduled_ms": 5000,
+      "applied_ms": 5000
+    },
+    {
+      "index": 21,
+      "bit": 0,
+      "scheduled_ms": 5200,
+      "applied_ms": 5200
+    },
+    {
+      "index": 22,
+      "bit": 0,
+      "scheduled_ms": 5400,
+      "applied_ms": 5400
+    },
+    {
+      "index": 23,
+      "bit": 0,
+      "scheduled_ms": 5600,
+      "applied_ms": 5600
+    },
+    {
+      "index": 24,
+      "bit": 0,
+      "scheduled_ms": 5800,
+      "applied_ms": 5800
+    },
+    {
+      "index": 25,
+      "bit": 1,
+      "scheduled_ms": 6000,
+      "applied_ms": 6000
+    },
+    {
+      "index": 26,
+      "bit": 0,
+      "scheduled_ms": 6200,
+      "applied_ms": 6200
+    },
+    {
+      "index": 27,
+      "bit": 0,
+      "scheduled_ms": 6400,
+      "applied_ms": 6400
+    },
+    {
+      "index": 28,
+      "bit": 1,
+      "scheduled_ms": 6600,
+      "applied_ms": 6600
+    },
+    {
+      "index": 29,
+      "bit": 0,
+      "scheduled_ms": 6800,
+      "applied_ms": 6800
+    },
+    {
+      "index": 30,
+      "bit": 0,
+      "scheduled_ms": 7000,
+      "applied_ms": 7000
+    },
+    {
+      "index": 31,
+      "bit": 0,
+      "scheduled_ms": 7200,
+      "applied_ms": 7200
+    },
+    {
+      "index": 32,
+      "bit": 0,
+      "scheduled_ms": 7400,
+      "applied_ms": 7400
+    },
+    {
+      "index": 33,
+      "bit": 1,
+      "scheduled_ms": 7600,
+      "applied_ms": 7600
+    },
+    {
+      "index": 34,
+      "bit": 0,
+      "scheduled_ms": 7800,
+      "applied_ms": 7800
+    },
+    {
+      "index": 35,
+      "bit": 0,
+      "scheduled_ms": 8000,
+      "applied_ms": 8000
+    },
+    {
+      "index": 36,
+      "bit": 0,
+      "scheduled_ms": 8200,
+      "applied_ms": 8200
+    },
+    {
+      "index": 37,
+      "bit": 1,
+      "scheduled_ms": 8400,
+      "applied_ms": 8400
+    },
+    {
+      "index": 38,
+      "bit": 0,
+      "scheduled_ms": 8600,
+      "applied_ms": 8600
+    },
+    {
+      "index": 39,
+      "bit": 1,
+      "scheduled_ms": 8800,
+      "applied_ms": 8800
+    },
+    {
+      "index": 40,
+      "bit": 0,
+      "scheduled_ms": 9000,
+      "applied_ms": 9000
+    },
+    {
+      "index": 41,
+      "bit": 1,
+      "scheduled_ms": 9200,
+      "applied_ms": 9200
+    },
+    {
+      "index": 42,
+      "bit": 0,
+      "scheduled_ms": 9400,
+      "applied_ms": 9400
+    },
+    {
+      "index": 43,
+      "bit": 0,
+      "scheduled_ms": 9600,
+      "applied_ms": 9600
+    },
+    {
+      "index": 44,
+      "bit": 1,
+      "scheduled_ms": 9800,
+      "applied_ms": 9800
+    },
+    {
+      "index": 45,
+      "bit": 1,
+      "scheduled_ms": 10000,
+      "applied_ms": 10000
+    },
+    {
+      "index": 46,
+      "bit": 0,
+      "scheduled_ms": 10200,
+      "applied_ms": 10200
+    },
+    {
+      "index": 47,
+      "bit": 0,
+      "scheduled_ms": 10400,
+      "applied_ms": 10400
+    },
+    {
+      "index": 48,
+      "bit": 0,
+      "scheduled_ms": 10600,
+      "applied_ms": 10600
+    },
+    {
+      "index": 49,
+      "bit": 1,
+      "scheduled_ms": 10800,
+      "applied_ms": 10800
+    },
+    {
+      "index": 50,
+      "bit": 0,
+      "scheduled_ms": 11000,
+      "applied_ms": 11000
+    },
+    {
+      "index": 51,
+      "bit": 0,
+      "scheduled_ms": 11200,
+      "applied_ms": 11200
+    },
+    {
+      "index": 52,
+      "bit": 1,
+      "scheduled_ms": 11400,
+      "applied_ms": 11400
+    },
+    {
+      "index": 53,
+      "bit": 1,
+      "scheduled_ms": 11600,
+      "applied_ms": 11600
+    },
+    {
+      "index": 54,
+      "bit": 0,
+      "scheduled_ms": 11800,
+      "applied_ms": 11800
+    },
+    {
+      "index": 55,
+      "bit": 0,
+      "scheduled_ms": 12000,
+      "applied_ms": 12000
+    },
+    {
+      "index": 56,
+      "bit": 0,
+      "scheduled_ms": 12200,
+      "applied_ms": 12200
+    },
+    {
+      "index": 57,
+      "bit": 1,
+      "scheduled_ms": 12400,
+      "applied_ms": 12400
+    },
+    {
+      "index": 58,
+      "bit": 0,
+      "scheduled_ms": 12600,
+      "applied_ms": 12600
+    },
+    {
+      "index": 59,
+      "bit": 0,
+      "scheduled_ms": 12800,
+      "applied_ms": 12800
+    },
+    {
+      "index": 60,
+      "bit": 1,
+      "scheduled_ms": 13000,
+      "applied_ms": 13000
+    },
+    {
+      "index": 61,
+      "bit": 1,
+      "scheduled_ms": 13200,
+      "applied_ms": 13200
+    },
+    {
+      "index": 62,
+      "bit": 1,
+      "scheduled_ms": 13400,
+      "applied_ms": 13400
+    },
+    {
+      "index": 63,
+      "bit": 1,
+      "scheduled_ms": 13600,
+      "applied_ms": 13600
+    },
+    {
+      "index": 64,
+      "bit": 0,
+      "scheduled_ms": 13800,
+      "applied_ms": 13800
+    },
+    {
+      "index": 65,
+      "bit": 0,
+      "scheduled_ms": 14000,
+      "applied_ms": 14000
+    },
+    {
+      "index": 66,
+      "bit": 1,
+      "scheduled_ms": 14200,
+      "applied_ms": 14200
+    },
+    {
+      "index": 67,
+      "bit": 0,
+      "scheduled_ms": 14400,
+      "applied_ms": 14400
+    },
+    {
+      "index": 68,
+      "bit": 0,
+      "scheduled_ms": 14600,
+      "applied_ms": 14600
+    },
+    {
+      "index": 69,
+      "bit": 0,
+      "scheduled_ms": 14800,
+      "applied_ms": 14800
+    },
+    {
+      "index": 70,
+      "bit": 0,
+      "scheduled_ms": 15000,
+      "applied_ms": 15000
+    },
+    {
+      "index": 71,
+      "bit": 0,
+      "scheduled_ms": 15200,
+      "applied_ms": 15200
+    },
+    {
+      "index": 72,
+      "bit": 0,
+      "scheduled_ms": 15400,
+      "applied_ms": 15400
+    },
+    {
+      "index": 73,
+      "bit": 1,
+      "scheduled_ms": 15600,
+      "applied_ms": 15600
+    },
+    {
+      "index": 74,
+      "bit": 0,
+      "scheduled_ms": 15800,
+      "applied_ms": 15800
+    },
+    {
+      "index": 75,
+      "bit": 1,
+      "scheduled_ms": 16000,
+      "applied_ms": 16000
+    },
+    {
+      "index": 76,
+      "bit": 0,
+      "scheduled_ms": 16200,
+      "applied_ms": 16200
+    },
+    {
+      "index": 77,
+      "bit": 0,
+      "scheduled_ms": 16400,
+      "applied_ms": 16400
+    },
+    {
+      "index": 78,
+      "bit": 1,
+      "scheduled_ms": 16600,
+      "applied_ms": 16600
+    },
+    {
+      "index": 79,
+      "bit": 0,
+      "scheduled_ms": 16800,
+      "applied_ms": 16800
+    },
+    {
+      "index": 80,
+      "bit": 0,
+      "scheduled_ms": 17000,
+      "applied_ms": 17000
+    },
+    {
+      "index": 81,
+      "bit": 1,
+      "scheduled_ms": 17200,
+      "applied_ms": 17200
+    },
+    {
+      "index": 82,
+      "bit": 0,
+      "scheduled_ms": 17400,
+      "applied_ms": 17400
+    },
+    {
+      "index": 83,
+      "bit": 1,
+      "scheduled_ms": 17600,
+      "applied_ms": 17600
+    },
+    {
+      "index": 84,
+      "bit": 0,
+      "scheduled_ms": 17800,
+      "applied_ms": 17800
+    },
+    {
+      "index": 85,
+      "bit": 0,
+      "scheduled_ms": 18000,
+      "applied_ms": 18000
+    },
+    {
+      "index": 86,
+      "bit": 1,
+      "scheduled_ms": 18200,
+      "applied_ms": 18200
+    },
+    {
+      "index": 87,
+      "bit": 1,
+      "scheduled_ms": 18400,
+      "applied_ms": 18400
+    },
+    {
+      "index": 88,
+      "bit": 1,
+      "scheduled_ms": 18600,
+      "applied_ms": 18600
+    },
+    {
+      "index": 89,
+      "bit": 0,
+      "scheduled_ms": 18800,
+      "applied_ms": 18800
+    },
+    {
+      "index": 90,
+      "bit": 1,
+      "scheduled_ms": 19000,
+      "applied_ms": 19000
+    },
+    {
+      "index": 91,
+      "bit": 1,
+      "scheduled_ms": 19200,
+      "applied_ms": 19200
+    },
+    {
+      "index": 92,
+      "bit": 1,
+      "scheduled_ms": 19400,
+      "applied_ms": 19400
+    },
+    {
+      "index": 93,
+      "bit": 0,
+      "scheduled_ms": 19600,
+      "applied_ms": 19600
+    },
+    {
+      "index": 94,
+      "bit": 0,
+      "scheduled_ms": 19800,
+      "applied_ms": 19800
+    },
+    {
+      "index": 95,
+      "bit": 0,
+      "scheduled_ms": 20000,
+      "applied_ms": 20000
+    },
+    {
+      "index": 96,
+      "bit": 1,
+      "scheduled_ms": 20200,
+      "applied_ms": 20200
+    },
+    {
+      "index": 97,
+      "bit": 0,
+      "scheduled_ms": 20400,
+      "applied_ms": 20400
+    },
+    {
+      "index": 98,
+      "bit": 0,
+      "scheduled_ms": 20600,
+      "applied_ms": 20600
+    },
+    {
+      "index": 99,
+      "bit": 0,
+      "scheduled_ms": 20800,
+      "applied_ms": 20800
+    },
+    {
+      "index": 100,
+      "bit": 0,
+      "scheduled_ms": 21000,
+      "applied_ms": 21000
+    },
+    {
+      "index": 101,
+      "bit": 0,
+      "scheduled_ms": 21200,
+      "applied_ms": 21200
+    },
+    {
+      "index": 102,
+      "bit": 1,
+      "scheduled_ms": 21400,
+      "applied_ms": 21400
+    },
+    {
+      "index": 103,
+      "bit": 1,
+      "scheduled_ms": 21600,
+      "applied_ms": 21600
+    }
+  ],
+  "crc_hex": "B883",
+  "bits": [
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    0,
+    1,
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    1,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    0,
+    1,
+    0,
+    1,
+    0,
+    0,
+    1,
+    1,
+    1,
+    0,
+    1,
+    1,
+    1,
+    0,
+    0,
+    0,
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1,
+    1
+  ],
+  "gray": {
+    "idle": 128,
+    "zero": 64,
+    "one": 192
+  },
+  "pre_idle_ms": 1000,
+  "post_idle_ms": 1000,
+  "clock": "performance.now (requestAnimationFrame timestamp); ms relative to Send click",
+  "transmit_start_wall_iso": "2026-11-24T15:40:51.276Z",
+  "packet_start_ms": 1000,
+  "packet_end_ms": 21800,
+  "transmit_end_ms": 22800,
+  "frame_interval_ms_median": 16.667,
+  "frame_count": 1368,
+  "late_symbols": 0,
+  "skipped_symbols": 0,
+  "max_frame_gap_ms": 16.667,
+  "stall_frames": 0,
+  "aborted": false,
+  "abort_reason": null,
+  "user_agent": "Chrome (simulated frame clock)",
+  "patch_px": {
+    "x": 129,
+    "y": 231,
+    "w": 387,
+    "h": 120,
+    "viewport_w": 645,
+    "viewport_h": 301,
+    "device_pixel_ratio": 2,
+    "screen_w": 1710,
+    "screen_h": 1112,
+    "fullscreen": false
+  },
+  "contract": "v1",
+  "timing_ok": true,
+  "note": "Sample from the page's scheduler driven by a simulated 60 Hz frame clock (no display). Field layout is final; a real run shows up to about 1 frame of jitter in applied_ms."
+}
