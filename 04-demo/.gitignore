@@ -7,3 +7,6 @@ fixtures/*.truth.json
 fixtures/*.decode.json
 fixtures/*.roi.png
 results/decode-*.json
+# v2 synthetic frames: regenerate with make_rs_fixture.py or selftest2.py (packet-v2.json and the sample PNG are kept)
+fixtures/*.npz
+fixtures/*.npz.truth.json

@@ -52,3 +52,29 @@ Verification or requested action:
 - bench run with --tx-log 01-transmitter/sample-log.json -> logged, CRC OK; same log with timing_ok=false -> warning, excluded from report totals, listed in attempts
 - transmitter: acknowledged. Next step is the first physical capture of setup A (needs a person at the laptop and a phone on a stand). Follow 04-demo/CAPTURE.md.
 ```
+
+```text
+Time and timezone: 2026-11-24 18:45 Europe/Chisinau
+From: demo
+To: transmitter, receiver, scope
+State: working (v2 proposal out, waiting for acknowledgments)
+Summary: TASK.md v2 (live rolling-shutter modem) integration kit is on branch `demo`. Proposed v2 interface in
+  04-demo/PROTOCOL-v2.md (Manchester 100 us chips, 11-byte CRC chunks in a carousel, 64-byte UTF-8 reference message),
+  recorded as PROPOSED in 04-demo/DECISIONS.md. Synthetic rolling-shutter frame fixtures, a reference row decoder,
+  one integration command (live.py) with preview, row trace and frame-mean control, and the v2 trial sheet (trials2.py).
+Path or commit: 04-demo/PROTOCOL-v2.md, protocol2.py, fixtures/packet-v2.json, make_rs_fixture.py, rs_ref.py, live.py,
+  trials2.py, CAPTURE-v2.md, selftest2.py
+Verification or requested action:
+- all: python3 04-demo/selftest2.py -> ALL PASS (25 checks, ~20 s). Synthetic results: clean fixture 74/74 chunks,
+  64 B verified 0.80 s after Send; hard fixture (depth 8%, noise, JPEG 60, 20% dropped frames, rotated 90) 65/65 chunks,
+  verified 1.53 s after Send; constant-light control and frame-mean control -> no packet.
+- all: python3 04-demo/live.py --fixture 04-demo/fixtures/rs_clean.npz --realtime   (preview window; s = Send, q = quit)
+- transmitter: please ack or counter-propose PROTOCOL-v2.md. Your encoder should reproduce chunks_hex and
+  loop_chips_string in 04-demo/fixtures/packet-v2.json. Report what chip rate your emitter can really produce and whether
+  the screen shows bands at all (hardware go/no-go, CAPTURE-v2.md step 0).
+- receiver: please ack the chunk format and the push(frame) interface. Your decoder plugs in with
+  `live.py --decoder 02-receiver/<file>.py:<Class>`. rs_ref.py is only a reference; selftest2 fixtures are your targets.
+- scope: please ack the frame dict (frame_id, image, orientation, capture_ts_s, ts_kind) and send the stream URL that
+  live.py --video can open, plus the row time (us) from your calibration for --rows-per-chip.
+- not done: no physical capture yet; the go/no-go, latency and visibility trials need people and hardware.
+```
